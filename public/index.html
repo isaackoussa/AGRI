@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGRI — Recettes Agricoles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<meta name="theme-color" content="#141A12">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#141A12;
+    --panel:#1E261B;
+    --panel-2:#273022;
+    --border:rgba(154,205,80,0.18);
+    --leaf:#9ACD50;
+    --leaf-deep:#6B9A2F;
+    --amber:#F2A93B;
+    --income:#4CAF7D;
+    --expense:#D65A45;
+    --text:#EEF2E4;
+    --text-soft:#93A183;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:820px;margin:0 auto;padding:32px 20px 70px;}
+
+  header{margin-bottom:24px;}
+  .plaque{
+    display:inline-block;
+    background:var(--leaf);
+    color:#141A12;
+    font-family:'Bungee', cursive;
+    font-size:clamp(20px,5vw,30px);
+    padding:12px 22px;
+    border-radius:4px;
+    transform:rotate(-1deg);
+    box-shadow:0 6px 16px rgba(0,0,0,0.4);
+    margin-bottom:10px;
+  }
+  .subtitle{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--text-soft);
+    margin:0;
+  }
+
+  /* Dashboard */
+  .dashboard{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+    gap:12px;
+    margin:24px 0 28px;
+  }
+  .dash-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px 16px;
+  }
+  .dash-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-soft);
+    margin:0 0 6px;
+  }
+  .dash-value{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size:20px;
+    margin:0;
+  }
+  .dash-value.income{color:var(--income);}
+  .dash-value.expense{color:var(--expense);}
+  .dash-value.leaf{color:var(--leaf);}
+  .dash-value.amber{color:var(--amber);}
+  .dash-sub{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--text-soft);
+    margin:4px 0 0;
+  }
+
+  /* Tabs */
+  .tabs{
+    display:flex;
+    gap:0;
+    border-bottom:1px solid var(--border);
+    margin-bottom:22px;
+    overflow-x:auto;
+  }
+  .tab{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    padding:10px 16px;
+    cursor:pointer;
+    background:transparent;
+    border:none;
+    color:var(--text-soft);
+    white-space:nowrap;
+    border-bottom:2px solid transparent;
+  }
+  .tab.active{color:var(--leaf);border-bottom-color:var(--leaf);}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* Month selector */
+  .month-select{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:22px;
+    flex-wrap:wrap;
+  }
+  input[type="month"]{
+    font-family:'JetBrains Mono', monospace;
+    font-size:14px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:9px 12px;
+    border-radius:6px;
+  }
+  .month-total{
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+    color:var(--text-soft);
+  }
+  .month-total b{color:var(--income);}
+
+  .section-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--text-soft);
+    margin:28px 0 14px;
+  }
+
+  select, input[type="text"], input[type="number"], input[type="date"]{
+    font-family:'Inter', sans-serif;
+    font-size:13.5px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:9px 10px;
+    border-radius:6px;
+    width:100%;
+  }
+  input[type="number"]{
+    font-family:'JetBrains Mono', monospace;
+  }
+
+  /* Vente card */
+  .vente-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px;
+    margin-bottom:10px;
+  }
+  .vente-line1{
+    display:grid;
+    grid-template-columns:135px 1fr 32px;
+    gap:8px;
+    align-items:center;
+    margin-bottom:8px;
+  }
+  .vente-line2{
+    display:grid;
+    grid-template-columns:1fr 90px 1fr;
+    gap:8px;
+    align-items:center;
+    margin-bottom:8px;
+  }
+  .vente-line3{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:8px;
+    align-items:center;
+  }
+  .vente-montant{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size:15px;
+    color:var(--income);
+    white-space:nowrap;
+  }
+  .mini-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:9.5px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--text-soft);
+    display:block;
+    margin-bottom:3px;
+  }
+  .dispo-hint{
+    text-transform:none;
+    letter-spacing:normal;
+    color:var(--leaf);
+    font-size:9.5px;
+    opacity:0.85;
+  }
+
+  /* Charge row */
+  .charge-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px;
+    margin-bottom:10px;
+  }
+  .charge-line1{
+    display:grid;
+    grid-template-columns:135px 1fr 32px;
+    gap:8px;
+    align-items:center;
+    margin-bottom:8px;
+  }
+  .charge-line2{
+    display:grid;
+    grid-template-columns:1fr 130px;
+    gap:8px;
+    align-items:center;
+  }
+  .charge-card input[type="number"]{color:var(--expense);}
+
+  .row-remove{
+    background:transparent;
+    border:none;
+    color:var(--expense);
+    cursor:pointer;
+    font-size:18px;
+    padding:0;
+  }
+  button.addbtn{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    border:1px dashed var(--leaf);
+    background:transparent;
+    color:var(--leaf);
+    padding:9px 14px;
+    border-radius:6px;
+    cursor:pointer;
+    margin-top:4px;
+  }
+  button.addbtn:hover{background:rgba(154,205,80,0.1);}
+
+  /* Chart */
+  .chart{
+    display:flex;
+    align-items:flex-end;
+    gap:6px;
+    height:120px;
+    margin-bottom:8px;
+    padding:0 2px;
+  }
+  .bar-wrap{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-end;
+    height:100%;
+  }
+  .bar{
+    width:100%;
+    max-width:26px;
+    background:linear-gradient(180deg, var(--leaf), var(--leaf-deep));
+    border-radius:4px 4px 0 0;
+    min-height:2px;
+  }
+  .bar-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:9px;
+    color:var(--text-soft);
+    margin-top:6px;
+    writing-mode:vertical-rl;
+    text-orientation:mixed;
+  }
+
+  /* Boxes */
+  .reconcile-box{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:18px 18px;
+    margin-bottom:12px;
+  }
+  .reconcile-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:14px;
+  }
+  .reconcile-row:last-child{margin-bottom:0;}
+  .reconcile-row label{
+    font-size:13.5px;
+    color:var(--text-soft);
+  }
+  .reconcile-hint{
+    font-size:11px;
+    color:var(--text-soft);
+    opacity:0.7;
+    font-weight:400;
+  }
+  .ecart{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size:14px;
+  }
+  .ecart.ok{color:var(--income);}
+  .ecart.bad{color:var(--expense);}
+
+  /* Historique */
+  .log-row{
+    display:grid;
+    grid-template-columns:90px 1fr auto;
+    gap:10px;
+    padding:11px 4px;
+    border-bottom:1px solid var(--border);
+    align-items:center;
+    font-size:13.5px;
+  }
+  .log-date{font-family:'JetBrains Mono', monospace;font-size:11.5px;color:var(--text-soft);}
+  .log-amount{font-family:'JetBrains Mono', monospace;font-weight:600;}
+  .log-amount.income{color:var(--income);}
+  .log-amount.expense{color:var(--expense);}
+
+  /* Fiche culture */
+  .culture-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px;
+    margin-bottom:14px;
+  }
+  .culture-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:12px;
+  }
+  .culture-name{
+    font-family:'Bungee', cursive;
+    font-size:15px;
+    color:var(--leaf);
+    margin:0;
+  }
+  .culture-stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
+    gap:10px;
+  }
+  .cstat{
+    background:var(--panel-2);
+    border-radius:8px;
+    padding:10px;
+  }
+  .cstat .mini-label{margin-bottom:4px;}
+  .cstat-val{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:600;
+    font-size:13.5px;
+    margin:0;
+  }
+  .cstat-val.income{color:var(--income);}
+  .cstat-val.expense{color:var(--expense);}
+  .cstat-val.leaf{color:var(--leaf);}
+  .cstat-val.amber{color:var(--amber);}
+  .culture-manage-row{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:8px;
+    margin-bottom:8px;
+  }
+
+  .empty{
+    text-align:center;
+    padding:30px 10px;
+    color:var(--text-soft);
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+  }
+  footer{
+    text-align:center;
+    margin-top:40px;
+    padding-top:18px;
+    border-top:1px solid var(--border);
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    color:var(--text-soft);
+    letter-spacing:0.06em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="plaque">AGRI 🌱</div>
+    <p class="subtitle">Recettes agricoles — ventes &amp; charges par culture</p>
+  </header>
+
+  <div class="dashboard" id="dashboard"></div>
+
+  <div class="tabs">
+    <button class="tab active" data-view="recoltes">🌾 Récoltes</button>
+    <button class="tab" data-view="ventes">📝 Ventes</button>
+    <button class="tab" data-view="charges">🧾 Charges</button>
+    <button class="tab" data-view="caisse">💰 Caisse</button>
+    <button class="tab" data-view="cultures">🌱 Cultures</button>
+    <button class="tab" data-view="historique">📜 Historique</button>
+  </div>
+
+  <div class="view" id="view-ventes">
+    <div class="month-select">
+      <input type="month" class="mois-picker" id="mpVentes">
+      <span class="month-total" id="monthTotalLabel"></span>
+    </div>
+    <p class="section-label">Ventes du mois — quantité × prix = montant automatique</p>
+    <div id="ventesList"></div>
+    <button class="addbtn" id="btnAddVente">+ Ajouter une vente</button>
+  </div>
+
+  <div class="view active" id="view-recoltes">
+    <div class="month-select">
+      <input type="month" class="mois-picker" id="mpRecoltes">
+    </div>
+    <p class="section-label">Récoltes du mois — ce que tu as récolté</p>
+    <div id="recoltesList"></div>
+    <button class="addbtn" id="btnAddRecolte">+ Ajouter une récolte</button>
+  </div>
+
+  <div class="view" id="view-charges">
+    <div class="month-select">
+      <input type="month" class="mois-picker" id="mpCharges">
+      <span class="month-total" id="chargesTotalLabel"></span>
+    </div>
+    <p class="section-label">Charges du mois</p>
+    <div id="chargesList"></div>
+    <button class="addbtn" id="btnAddCharge">+ Ajouter une charge</button>
+  </div>
+
+  <div class="view" id="view-caisse">
+    <p class="section-label">Montant dans la caisse</p>
+    <div class="reconcile-box">
+      <div class="reconcile-row">
+        <label>Cumul de toutes les transactions, tous les mois confondus<br><span class="reconcile-hint">= toutes les ventes − toutes les charges, depuis le début</span></label>
+        <span class="ecart" id="soldeTheorique">0</span>
+      </div>
+      <div class="reconcile-row">
+        <label>Solde du mois affiché<br><span class="reconcile-hint">Uniquement les ventes et charges du mois en cours</span></label>
+        <span class="ecart" id="soldeDuMois">0</span>
+      </div>
+    </div>
+
+    <p class="section-label">Tendance des ventes (12 derniers mois)</p>
+    <div class="chart" id="chart"></div>
+
+    <p class="section-label" id="chartRecoltesLabel">Tendance des récoltes (12 derniers mois)</p>
+    <div class="chart" id="chartRecoltes"></div>
+
+    <p class="section-label">💾 Sauvegarde locale (en plus de la synchro automatique)</p>
+    <div class="reconcile-box" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <button class="addbtn" id="btnExport" style="margin-top:0;">⬇ Exporter mes données (JSON)</button>
+      <button class="addbtn" id="btnImport" style="margin-top:0;">⬆ Importer une sauvegarde</button>
+      <input type="file" id="fileImport" accept="application/json" style="display:none;">
+    </div>
+  </div>
+
+  <div class="view" id="view-historique">
+    <p class="section-label">Historique complet (généré automatiquement)</p>
+    <div id="historiqueList"></div>
+  </div>
+
+  <div class="view" id="view-cultures">
+    <p class="section-label">Mes cultures</p>
+    <div class="culture-manage-row">
+      <input type="text" id="newCultureName" placeholder="Nom de la nouvelle culture (ex : Maïs)">
+      <button class="addbtn" style="margin-top:0;" id="btnAddCulture">+ Ajouter</button>
+    </div>
+    <p class="section-label">Analyse par culture</p>
+    <div id="culturesSummary"></div>
+  </div>
+
+  <footer>AGRI — CHAQUE VENTE COMPTE, CHAQUE CULTURE PARLE</footer>
+</div>
+
+<script>
+const CULTURES_INITIALES = [];
+const UNITES = ["kg", "sac", "tonne", "botte", "filet", "unité"];
+const CATEGORIES_CHARGES = ["Semences / plants","Engrais","Phytosanitaires","Main d'œuvre","Irrigation / eau","Carburant / machines","Transport","Location matériel","Récolte","Autre"];
+const CULTURE_GENERALE = "Général (toutes cultures)";
+
+let data = {
+  cultures: [...CULTURES_INITIALES],
+  recoltes: [], // {id, date, culture, quantite, unite}
+  ventes: [],   // {id, date, culture, quantite, unite, prix, acheteur}
+  charges: []   // {date, culture, categorie, montant, lienType:'aucun'|'recolte'|'vente', lienId}
+};
+
+function genId(){
+  return 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8);
+}
+
+function migrateData(){
+  if(!Array.isArray(data.cultures)) data.cultures = [];
+  if(!Array.isArray(data.recoltes)) data.recoltes = [];
+  if(!Array.isArray(data.ventes)) data.ventes = [];
+  if(!Array.isArray(data.charges)) data.charges = [];
+  data.recoltes.forEach(r=>{ if(!r.id) r.id = genId(); });
+  data.ventes.forEach(v=>{ if(!v.id) v.id = genId(); });
+  data.charges.forEach(c=>{
+    if(c.lienType !== 'recolte' && c.lienType !== 'vente') c.lienType = 'aucun';
+    if(typeof c.lienId === 'undefined') c.lienId = null;
+  });
+}
+migrateData();
+
+function todayMonthKey(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+let moisCourant = todayMonthKey();
+function todayDateKey(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function monthOf(dateStr){ return (dateStr||'').slice(0,7); }
+function montantVente(v){ return (Number(v.quantite)||0) * (Number(v.prix)||0); }
+function totalRecolteCultureUnite(culture, unite){
+  return data.recoltes.filter(r=>r.culture===culture && (r.unite||'kg')===unite)
+    .reduce((a,r)=>a+(Number(r.quantite)||0), 0);
+}
+function totalVenduCultureUnite(culture, unite, excludeId){
+  return data.ventes.filter(v=>v.culture===culture && (v.unite||'kg')===unite && v.id!==excludeId)
+    .reduce((a,v)=>a+(Number(v.quantite)||0), 0);
+}
+function quantiteDisponible(culture, unite, excludeId){
+  const rec = totalRecolteCultureUnite(culture, unite);
+  const vendu = totalVenduCultureUnite(culture, unite, excludeId);
+  return Math.max(0, rec - vendu);
+}
+function clampVenteQuantite(v){
+  const dispo = quantiteDisponible(v.culture, v.unite||'kg', v.id);
+  if(Number(v.quantite||0) > dispo){ v.quantite = dispo; return true; }
+  return false;
+}
+function formatFCFA(n){
+  return Number(n||0).toLocaleString('fr-FR') + ' FCFA';
+}
+
+function monthTotal(mk){
+  const gains = data.ventes.filter(v=>monthOf(v.date)===mk).reduce((a,v)=>a+montantVente(v), 0);
+  const depenses = data.charges.filter(c=>monthOf(c.date)===mk).reduce((a,c)=>a+(Number(c.montant)||0), 0);
+  return { gains, depenses };
+}
+function totalGlobal(){
+  const gains = data.ventes.reduce((a,v)=>a+montantVente(v), 0);
+  const depenses = data.charges.reduce((a,c)=>a+(Number(c.montant)||0), 0);
+  return { gains, depenses };
+}
+
+// --- Persistence (synchronisée entre appareils via Netlify) ---
+async function loadData(){
+  try{
+    const res = await fetch('/.netlify/functions/agri-data');
+    if(res.ok){
+      const json = await res.json();
+      if(json && json.value){
+        data = JSON.parse(json.value);
+        migrateData();
+      }
+    }
+  } catch(e){ /* premier usage : valeurs par défaut */ }
+}
+async function saveData(){
+  try{
+    await fetch('/.netlify/functions/agri-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value: JSON.stringify(data) })
+    });
+  } catch(e){ console.error('Erreur de sauvegarde', e); }
+}
+let saveTimeout = null;
+let saveStatusTimeout = null;
+function scheduleSave(){
+  showSaveStatus('En attente…');
+  if(saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(async ()=>{
+    await saveData();
+    showSaveStatus('Enregistré ✓', true);
+  }, 700);
+}
+function showSaveStatus(text, autoHide){
+  let el = document.getElementById('saveStatus');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'saveStatus';
+    el.style.cssText = 'position:fixed;bottom:16px;right:16px;background:var(--panel);border:1px solid var(--border);color:var(--text-soft);font-family:JetBrains Mono, monospace;font-size:11px;padding:8px 12px;border-radius:6px;z-index:2000;opacity:0.9;';
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  el.style.display = 'block';
+  if(saveStatusTimeout) clearTimeout(saveStatusTimeout);
+  if(autoHide){
+    saveStatusTimeout = setTimeout(()=>{ el.style.display = 'none'; }, 1500);
+  }
+}
+
+let warnTimeout = null;
+function showWarning(text){
+  let el = document.getElementById('warnStatus');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'warnStatus';
+    el.style.cssText = 'position:fixed;bottom:56px;right:16px;left:16px;max-width:340px;margin-left:auto;background:#3A1F1B;border:1px solid var(--expense);color:#FFC2B0;font-family:JetBrains Mono, monospace;font-size:11.5px;line-height:1.4;padding:10px 13px;border-radius:6px;z-index:2000;';
+    document.body.appendChild(el);
+  }
+  el.textContent = '⚠ ' + text;
+  el.style.display = 'block';
+  if(warnTimeout) clearTimeout(warnTimeout);
+  warnTimeout = setTimeout(()=>{ el.style.display = 'none'; }, 3200);
+}
+
+// --- Dashboard ---
+function renderDashboard(){
+  const g = totalGlobal();
+  const solde = g.gains - g.depenses;
+  const mk = moisCourant;
+  const cm = monthTotal(mk);
+  const dash = document.getElementById('dashboard');
+  dash.innerHTML = `
+    <div class="dash-card">
+      <p class="dash-label">Solde en caisse</p>
+      <p class="dash-value ${solde>=0?'income':'expense'}">${formatFCFA(solde)}</p>
+    </div>
+    <div class="dash-card">
+      <p class="dash-label">Ventes ce mois</p>
+      <p class="dash-value income">${formatFCFA(cm.gains)}</p>
+    </div>
+    <div class="dash-card">
+      <p class="dash-label">Charges ce mois</p>
+      <p class="dash-value expense">${formatFCFA(cm.depenses)}</p>
+    </div>
+    <div class="dash-card">
+      <p class="dash-label">Total tous les mois</p>
+      <p class="dash-value leaf">${formatFCFA(g.gains)}</p>
+      <p class="dash-sub">ventes cumulées depuis le début</p>
+    </div>
+  `;
+}
+
+// --- Récoltes ---
+function recoltesDuMois(mk){
+  return data.recoltes
+    .map((r, idx)=>({ r, idx }))
+    .filter(({r})=>monthOf(r.date)===mk);
+}
+function renderRecoltes(){
+  const mk = moisCourant;
+  const list = document.getElementById('recoltesList');
+  const items = recoltesDuMois(mk);
+  if(items.length === 0){
+    list.innerHTML = `<div class="empty">Aucune récolte notée ce mois-ci. (Commence par créer tes cultures dans l’onglet 🌱 Cultures.)</div>`;
+    return;
+  }
+  const totauxUnite = {};
+  items.forEach(({r})=>{
+    const u = r.unite || 'kg';
+    totauxUnite[u] = (totauxUnite[u]||0) + (Number(r.quantite)||0);
+  });
+  const totalTexte = Object.entries(totauxUnite).map(([u,q])=>`${q.toLocaleString('fr-FR')} ${u}`).join(' · ');
+  list.innerHTML = items.map(({r, idx})=>`
+    <div class="vente-card recolte-card" data-idx="${idx}">
+      <div class="vente-line1">
+        <div><span class="mini-label">Date</span><input type="date" class="r-date" value="${r.date || ''}"></div>
+        <div><span class="mini-label">Aliment / culture</span><select class="r-culture">${culturesOptions(r.culture, false)}</select></div>
+        <button class="row-remove" title="Supprimer">✕</button>
+      </div>
+      <div class="vente-line2" style="grid-template-columns:1fr 90px;">
+        <div><span class="mini-label">Quantité récoltée</span><input type="number" class="r-qte" placeholder="0" value="${r.quantite || ''}"></div>
+        <div><span class="mini-label">Unité</span><select class="r-unite">${UNITES.map(u=>`<option value="${u}" ${u===(r.unite||'kg')?'selected':''}>${u}</option>`).join('')}</select></div>
+      </div>
+    </div>
+  `).join('') + `
+    <div class="reconcile-row" style="padding:4px 6px;">
+      <label>Total récolté ce mois (${items.length} récolte${items.length>1?'s':''})</label>
+      <span class="ecart ok">${totalTexte || '—'}</span>
+    </div>
+  `;
+
+  list.querySelectorAll('.recolte-card').forEach(card=>{
+    const idx = Number(card.getAttribute('data-idx'));
+    const r = data.recoltes[idx];
+    card.querySelector('.r-date').addEventListener('change', async (e)=>{
+      r.date = e.target.value;
+      await saveData();
+      renderRecoltes();
+    });
+    card.querySelector('.r-culture').addEventListener('change', async (e)=>{ r.culture = e.target.value; await saveData(); });
+    card.querySelector('.r-qte').addEventListener('input', (e)=>{ r.quantite = Number(e.target.value)||0; scheduleSave(); });
+    card.querySelector('.r-unite').addEventListener('change', async (e)=>{ r.unite = e.target.value; await saveData(); renderRecoltes(); });
+    card.querySelector('.row-remove').addEventListener('click', async ()=>{
+      data.recoltes.splice(idx, 1);
+      await saveData();
+      renderRecoltes();
+    });
+  });
+}
+async function addRecolte(){
+  if(data.cultures.length === 0){ switchView('cultures'); document.getElementById('newCultureName').focus(); return; }
+  const mk = moisCourant;
+  const date = (mk === todayMonthKey()) ? todayDateKey() : mk + '-01';
+  data.recoltes.push({ id: genId(), date, culture: data.cultures[0] || '', quantite: 0, unite: 'kg' });
+  await saveData();
+  renderRecoltes();
+}
+
+// --- Ventes ---
+function culturesOptions(selected, avecGeneral){
+  const liste = avecGeneral ? [CULTURE_GENERALE, ...data.cultures] : data.cultures;
+  let opts = liste.map(c=>`<option value="${c}" ${c===selected?'selected':''}>${c}</option>`).join('');
+  if(selected && !liste.includes(selected)){
+    opts = `<option value="${selected}" selected>${selected}</option>` + opts;
+  }
+  return opts;
+}
+function ventesDuMois(mk){
+  return data.ventes
+    .map((v, idx)=>({ v, idx }))
+    .filter(({v})=>monthOf(v.date)===mk);
+}
+function renderVentes(){
+  const mk = moisCourant;
+  const list = document.getElementById('ventesList');
+  const items = ventesDuMois(mk);
+  if(items.length === 0){
+    list.innerHTML = `<div class="empty">Aucune vente ce mois-ci. Ajoute ta première vente !</div>`;
+    return;
+  }
+  // Corrige silencieusement toute vente qui dépasserait le stock récolté (ex: récolte supprimée après coup)
+  let aClampe = false;
+  items.forEach(({v})=>{ if(clampVenteQuantite(v)) aClampe = true; });
+  if(aClampe) saveData();
+
+  list.innerHTML = items.map(({v, idx})=>{
+    const dispo = quantiteDisponible(v.culture, v.unite||'kg', v.id);
+    return `
+    <div class="vente-card" data-idx="${idx}">
+      <div class="vente-line1">
+        <div><span class="mini-label">Date</span><input type="date" class="v-date" value="${v.date || ''}"></div>
+        <div><span class="mini-label">Culture</span><select class="v-culture">${culturesOptions(v.culture, false)}</select></div>
+        <button class="row-remove" title="Supprimer">✕</button>
+      </div>
+      <div class="vente-line2">
+        <div><span class="mini-label">Quantité <span class="dispo-hint">(dispo : ${dispo.toLocaleString('fr-FR')} ${v.unite||'kg'})</span></span><input type="number" class="v-qte" placeholder="0" max="${dispo}" value="${v.quantite || ''}"></div>
+        <div><span class="mini-label">Unité</span><select class="v-unite">${UNITES.map(u=>`<option value="${u}" ${u===(v.unite||'kg')?'selected':''}>${u}</option>`).join('')}</select></div>
+        <div><span class="mini-label">Prix unitaire (FCFA)</span><input type="number" class="v-prix" placeholder="0" value="${v.prix || ''}"></div>
+      </div>
+      <div class="vente-line3">
+        <div><span class="mini-label">Acheteur (facultatif)</span><input type="text" class="v-acheteur" placeholder="Nom de l'acheteur…" value="${v.acheteur || ''}"></div>
+        <div style="text-align:right;"><span class="mini-label">Montant</span><span class="vente-montant v-montant">${formatFCFA(montantVente(v))}</span></div>
+      </div>
+    </div>
+  `;
+  }).join('');
+
+  list.querySelectorAll('.vente-card').forEach(card=>{
+    const idx = Number(card.getAttribute('data-idx'));
+    const v = data.ventes[idx];
+    const refresh = ()=>{
+      card.querySelector('.v-montant').textContent = formatFCFA(montantVente(v));
+      scheduleSave();
+      renderDashboard();
+      updateMonthTotalLabel();
+    };
+    card.querySelector('.v-date').addEventListener('change', async (e)=>{
+      v.date = e.target.value;
+      await saveData();
+      renderVentes(); renderDashboard(); updateMonthTotalLabel();
+    });
+    card.querySelector('.v-culture').addEventListener('change', async (e)=>{
+      v.culture = e.target.value;
+      const clamped = clampVenteQuantite(v);
+      await saveData();
+      if(clamped) showWarning(`Quantité ajustée à ${v.quantite} ${v.unite||'kg'} : c'est tout ce qu'il reste de récolté pour "${v.culture}".`);
+      renderVentes(); renderDashboard(); updateMonthTotalLabel();
+    });
+    card.querySelector('.v-qte').addEventListener('input', (e)=>{
+      const dispo = quantiteDisponible(v.culture, v.unite||'kg', v.id);
+      let val = Number(e.target.value)||0;
+      if(val > dispo){
+        val = dispo;
+        e.target.value = dispo || '';
+        showWarning(`Stock insuffisant : il ne reste que ${dispo.toLocaleString('fr-FR')} ${v.unite||'kg'} de récolté pour "${v.culture}".`);
+      }
+      v.quantite = val;
+      refresh();
+    });
+    card.querySelector('.v-prix').addEventListener('input', (e)=>{ v.prix = Number(e.target.value)||0; refresh(); });
+    card.querySelector('.v-unite').addEventListener('change', async (e)=>{
+      v.unite = e.target.value;
+      const clamped = clampVenteQuantite(v);
+      await saveData();
+      if(clamped) showWarning(`Quantité ajustée à ${v.quantite} ${v.unite} : c'est tout ce qu'il reste de récolté en ${v.unite} pour "${v.culture}".`);
+      renderVentes(); renderDashboard(); updateMonthTotalLabel();
+    });
+    card.querySelector('.v-acheteur').addEventListener('input', (e)=>{ v.acheteur = e.target.value; scheduleSave(); });
+    card.querySelector('.row-remove').addEventListener('click', async ()=>{
+      data.ventes.splice(idx, 1);
+      await saveData();
+      renderVentes(); renderDashboard(); updateMonthTotalLabel();
+    });
+  });
+}
+async function addVente(){
+  if(data.cultures.length === 0){ switchView('cultures'); document.getElementById('newCultureName').focus(); return; }
+  const mk = moisCourant;
+  const date = (mk === todayMonthKey()) ? todayDateKey() : mk + '-01';
+  data.ventes.push({ id: genId(), date, culture: data.cultures[0] || '', quantite: 0, unite: 'kg', prix: 0, acheteur: '' });
+  await saveData();
+  renderVentes();
+}
+
+// --- Charges ---
+function chargesDuMois(mk){
+  return data.charges
+    .map((c, idx)=>({ c, idx }))
+    .filter(({c})=>monthOf(c.date)===mk);
+}
+function libelleRecolte(r){
+  return `${r.date || '?'} — ${r.culture || '?'} — ${Number(r.quantite)||0} ${r.unite||'kg'}`;
+}
+function libelleVente(v){
+  return `${v.date || '?'} — ${v.culture || '?'} — ${Number(v.quantite)||0} ${v.unite||'kg'} (${formatFCFA(montantVente(v))})`;
+}
+function renderCharges(){
+  const mk = moisCourant;
+  const list = document.getElementById('chargesList');
+  const items = chargesDuMois(mk);
+  if(items.length === 0){
+    list.innerHTML = `<div class="empty">Aucune charge ce mois-ci.</div>`;
+    return;
+  }
+  list.innerHTML = items.map(({c, idx})=>{
+    let itemSelectHtml = '';
+    if(c.lienType === 'recolte'){
+      const opts = data.recoltes.slice().sort((a,b)=> a.date < b.date ? 1 : -1)
+        .map(r=>`<option value="${r.id}" ${r.id===c.lienId?'selected':''}>${libelleRecolte(r)}</option>`).join('');
+      itemSelectHtml = `<div style="margin-top:8px;"><span class="mini-label">Récolte liée</span><select class="c-lien-item">
+        <option value="">— Choisir la récolte —</option>${opts}
+      </select></div>`;
+    } else if(c.lienType === 'vente'){
+      const opts = data.ventes.slice().sort((a,b)=> a.date < b.date ? 1 : -1)
+        .map(v=>`<option value="${v.id}" ${v.id===c.lienId?'selected':''}>${libelleVente(v)}</option>`).join('');
+      itemSelectHtml = `<div style="margin-top:8px;"><span class="mini-label">Vente liée</span><select class="c-lien-item">
+        <option value="">— Choisir la vente —</option>${opts}
+      </select></div>`;
+    }
+    const cultureFieldHtml = c.lienType === 'aucun'
+      ? `<div><span class="mini-label">Culture concernée</span><select class="c-culture">${culturesOptions(c.culture || CULTURE_GENERALE, true)}</select></div>`
+      : `<div><span class="mini-label">Culture (auto, via le lien)</span><div style="padding:9px 10px;background:var(--panel-2);border-radius:6px;font-size:13.5px;color:var(--text-soft);">${c.culture || '—'}</div></div>`;
+    return `
+    <div class="charge-card" data-idx="${idx}">
+      <div class="charge-line1">
+        <div><span class="mini-label">Date</span><input type="date" class="c-date" value="${c.date || ''}"></div>
+        <div><span class="mini-label">Catégorie</span><select class="c-cat">${CATEGORIES_CHARGES.map(x=>`<option value="${x}" ${x===c.categorie?'selected':''}>${x}</option>`).join('')}</select></div>
+        <button class="row-remove" title="Supprimer">✕</button>
+      </div>
+      <div class="charge-line2">
+        ${cultureFieldHtml}
+        <div><span class="mini-label">Montant (FCFA)</span><input type="number" class="c-montant" placeholder="0" value="${c.montant || ''}"></div>
+      </div>
+      <div style="margin-top:8px;">
+        <span class="mini-label">Lié à</span>
+        <select class="c-lien-type">
+          <option value="aucun" ${c.lienType==='aucun'?'selected':''}>Aucun (culture seulement)</option>
+          <option value="recolte" ${c.lienType==='recolte'?'selected':''}>Une récolte précise</option>
+          <option value="vente" ${c.lienType==='vente'?'selected':''}>Une vente précise</option>
+        </select>
+      </div>
+      ${itemSelectHtml}
+    </div>
+  `;
+  }).join('');
+
+  list.querySelectorAll('.charge-card').forEach(card=>{
+    const idx = Number(card.getAttribute('data-idx'));
+    const c = data.charges[idx];
+    card.querySelector('.c-date').addEventListener('change', async (e)=>{
+      c.date = e.target.value;
+      await saveData();
+      renderCharges(); renderDashboard(); updateMonthTotalLabel();
+    });
+    card.querySelector('.c-cat').addEventListener('change', async (e)=>{ c.categorie = e.target.value; await saveData(); });
+    const cultureSel = card.querySelector('.c-culture');
+    if(cultureSel){
+      cultureSel.addEventListener('change', async (e)=>{ c.culture = e.target.value; await saveData(); });
+    }
+    card.querySelector('.c-montant').addEventListener('input', (e)=>{
+      c.montant = Number(e.target.value)||0;
+      scheduleSave();
+      renderDashboard();
+      updateMonthTotalLabel();
+    });
+    card.querySelector('.c-lien-type').addEventListener('change', async (e)=>{
+      c.lienType = e.target.value;
+      c.lienId = null;
+      await saveData();
+      renderCharges();
+    });
+    const lienItemSel = card.querySelector('.c-lien-item');
+    if(lienItemSel){
+      lienItemSel.addEventListener('change', async (e)=>{
+        c.lienId = e.target.value || null;
+        if(c.lienType === 'recolte'){
+          const r = data.recoltes.find(x=>x.id === c.lienId);
+          if(r) c.culture = r.culture;
+        } else if(c.lienType === 'vente'){
+          const v = data.ventes.find(x=>x.id === c.lienId);
+          if(v) c.culture = v.culture;
+        }
+        await saveData();
+        renderCharges();
+      });
+    }
+    card.querySelector('.row-remove').addEventListener('click', async ()=>{
+      data.charges.splice(idx, 1);
+      await saveData();
+      renderCharges(); renderDashboard(); updateMonthTotalLabel();
+    });
+  });
+}
+async function addCharge(){
+  const mk = moisCourant;
+  const date = (mk === todayMonthKey()) ? todayDateKey() : mk + '-01';
+  data.charges.push({ date, culture: CULTURE_GENERALE, categorie: CATEGORIES_CHARGES[0], montant: 0, lienType: 'aucun', lienId: null });
+  await saveData();
+  renderCharges();
+}
+
+function updateMonthTotalLabel(){
+  const t = monthTotal(moisCourant);
+  document.getElementById('monthTotalLabel').innerHTML =
+    `<b>${formatFCFA(t.gains)}</b> de ventes ce mois-ci`;
+  document.getElementById('chargesTotalLabel').innerHTML =
+    `<b style="color:var(--expense);">${formatFCFA(t.depenses)}</b> de charges ce mois-ci`;
+}
+
+// --- Caisse ---
+function renderChart(){
+  const chart = document.getElementById('chart');
+  const now = new Date();
+  const months = [];
+  for(let i=11; i>=0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+  }
+  const totals = months.map(mk=>monthTotal(mk).gains);
+  const max = Math.max(...totals, 1);
+  chart.innerHTML = months.map((mk,i)=>{
+    const [y,m] = mk.split('-');
+    const h = Math.max(2, Math.round((totals[i]/max)*100));
+    return `<div class="bar-wrap">
+      <div class="bar" style="height:${h}px" title="${formatFCFA(totals[i])}"></div>
+      <div class="bar-label">${m}/${y.slice(2)}</div>
+    </div>`;
+  }).join('');
+  renderChartRecoltes(months);
+}
+
+function uniteDominanteRecoltes(){
+  const compte = {};
+  data.recoltes.forEach(r=>{
+    const u = r.unite || 'kg';
+    compte[u] = (compte[u]||0) + 1;
+  });
+  let best = 'kg', bestN = -1;
+  Object.entries(compte).forEach(([u,n])=>{ if(n>bestN){ best=u; bestN=n; } });
+  return best;
+}
+function renderChartRecoltes(months){
+  const chart = document.getElementById('chartRecoltes');
+  const label = document.getElementById('chartRecoltesLabel');
+  if(data.recoltes.length === 0){
+    label.textContent = 'Tendance des récoltes (12 derniers mois)';
+    chart.innerHTML = `<div class="empty" style="width:100%;">Aucune récolte enregistrée pour l'instant.</div>`;
+    return;
+  }
+  const unite = uniteDominanteRecoltes();
+  label.textContent = `Tendance des récoltes (12 derniers mois) — en ${unite}`;
+  const totals = months.map(mk=>
+    data.recoltes
+      .filter(r=>monthOf(r.date)===mk && (r.unite||'kg')===unite)
+      .reduce((a,r)=>a+(Number(r.quantite)||0), 0)
+  );
+  const max = Math.max(...totals, 1);
+  chart.innerHTML = months.map((mk,i)=>{
+    const [y,m] = mk.split('-');
+    const h = Math.max(2, Math.round((totals[i]/max)*100));
+    const val = totals[i].toLocaleString('fr-FR') + ' ' + unite;
+    return `<div class="bar-wrap">
+      <div class="bar" style="height:${h}px;background:linear-gradient(180deg, var(--amber), #C97E1F);" title="${val}"></div>
+      <div class="bar-label">${m}/${y.slice(2)}</div>
+    </div>`;
+  }).join('');
+}
+function renderReconciliation(){
+  const g = totalGlobal();
+  const soldeGlobal = g.gains - g.depenses;
+  document.getElementById('soldeTheorique').textContent = formatFCFA(soldeGlobal);
+  document.getElementById('soldeTheorique').className = 'ecart ' + (soldeGlobal>=0 ? 'ok':'bad');
+
+  const mk = moisCourant;
+  const cm = monthTotal(mk);
+  const soldeMois = cm.gains - cm.depenses;
+  const el = document.getElementById('soldeDuMois');
+  el.textContent = formatFCFA(soldeMois);
+  el.className = 'ecart ' + (soldeMois>=0 ? 'ok':'bad');
+}
+
+// --- Historique ---
+function renderHistorique(){
+  const rows = [];
+  data.ventes.forEach(v=>{
+    const m = montantVente(v);
+    if(m > 0){
+      const qte = `${Number(v.quantite)||0} ${v.unite||'kg'}`;
+      rows.push({ date: v.date || '', type: `${v.culture} — ${qte}${v.acheteur ? ' → ' + v.acheteur : ''}`, montant: m });
+    }
+  });
+  data.charges.forEach(c=>{
+    if(Number(c.montant) > 0){
+      let lienTxt = '';
+      if(c.lienType === 'recolte' && c.lienId){
+        const r = data.recoltes.find(x=>x.id===c.lienId);
+        if(r) lienTxt = ` · lié à la récolte du ${r.date}`;
+      } else if(c.lienType === 'vente' && c.lienId){
+        const v = data.ventes.find(x=>x.id===c.lienId);
+        if(v) lienTxt = ` · lié à la vente du ${v.date}`;
+      }
+      rows.push({ date: c.date || '', type: `${c.categorie}${c.culture && c.culture !== CULTURE_GENERALE ? ' (' + c.culture + ')' : ''}${lienTxt}`, montant: -Number(c.montant) });
+    }
+  });
+  data.recoltes.forEach(r=>{
+    if(Number(r.quantite) > 0){
+      rows.push({ date: r.date || '', type: `🌾 Récolte — ${r.culture}`, montant: null, qte: `${Number(r.quantite).toLocaleString('fr-FR')} ${r.unite||'kg'}` });
+    }
+  });
+  rows.sort((a,b)=> a.date < b.date ? 1 : -1);
+
+  const list = document.getElementById('historiqueList');
+  if(rows.length === 0){
+    list.innerHTML = `<div class="empty">Aucune donnée enregistrée pour l'instant.</div>`;
+    return;
+  }
+  list.innerHTML = rows.map(r=>`
+    <div class="log-row">
+      <div class="log-date">${r.date}</div>
+      <div>${r.type}</div>
+      <div class="log-amount ${r.montant===null ? 'income' : (r.montant>=0?'income':'expense')}">${r.montant===null ? r.qte : (r.montant>=0?'+':'') + formatFCFA(r.montant)}</div>
+    </div>
+  `).join('');
+}
+
+// --- Cultures : analyse ---
+function statsCulture(nom){
+  const ventes = data.ventes.filter(v=>v.culture === nom);
+  const recettes = ventes.reduce((a,v)=>a+montantVente(v), 0);
+  const charges = data.charges
+    .filter(c=>c.culture === nom)
+    .reduce((a,c)=>a+(Number(c.montant)||0), 0);
+  const marge = recettes - charges;
+
+  // Quantités par unité
+  const qtes = {};
+  ventes.forEach(v=>{
+    const u = v.unite || 'kg';
+    qtes[u] = (qtes[u]||0) + (Number(v.quantite)||0);
+  });
+
+  // Quantités récoltées par unité
+  const recQtes = {};
+  data.recoltes.filter(r=>r.culture === nom).forEach(r=>{
+    const u = r.unite || 'kg';
+    recQtes[u] = (recQtes[u]||0) + (Number(r.quantite)||0);
+  });
+
+  // Stock disponible = récolté − vendu, par unité
+  const dispoParUnite = {};
+  Object.keys(recQtes).forEach(u=>{
+    dispoParUnite[u] = Math.max(0, (recQtes[u]||0) - (qtes[u]||0));
+  });
+
+  // Prix moyen au kg et meilleur prix (ventes en kg uniquement)
+  const ventesKg = ventes.filter(v=>(v.unite||'kg')==='kg' && Number(v.quantite)>0 && Number(v.prix)>0);
+  const totalKg = ventesKg.reduce((a,v)=>a+Number(v.quantite), 0);
+  const caKg = ventesKg.reduce((a,v)=>a+montantVente(v), 0);
+  const prixMoyenKg = totalKg > 0 ? caKg/totalKg : 0;
+  let meilleurPrix = 0, meilleurAcheteur = '';
+  ventesKg.forEach(v=>{
+    if(Number(v.prix) > meilleurPrix){ meilleurPrix = Number(v.prix); meilleurAcheteur = v.acheteur || ''; }
+  });
+
+  return { recettes, charges, marge, qtes, recQtes, dispoParUnite, prixMoyenKg, meilleurPrix, meilleurAcheteur, nbVentes: ventes.length };
+}
+function renderCultures(){
+  const container = document.getElementById('culturesSummary');
+  if(data.cultures.length === 0){
+    container.innerHTML = `<div class="empty">Aucune culture. Ajoute ta première culture ci-dessus !</div>`;
+    return;
+  }
+  container.innerHTML = data.cultures.map(nom=>{
+    const s = statsCulture(nom);
+    const qteTexte = Object.entries(s.qtes).map(([u,q])=>`${q.toLocaleString('fr-FR')} ${u}`).join(' · ') || '—';
+    const recTexte = Object.entries(s.recQtes).map(([u,q])=>`${q.toLocaleString('fr-FR')} ${u}`).join(' · ') || '—';
+    const dispoTexte = Object.entries(s.dispoParUnite).map(([u,q])=>`${q.toLocaleString('fr-FR')} ${u}`).join(' · ') || '—';
+    return `
+    <div class="culture-card" data-nom="${nom}">
+      <div class="culture-head">
+        <p class="culture-name">${nom}</p>
+        <button class="row-remove cult-remove" title="Retirer cette culture de la liste">✕</button>
+      </div>
+      <div class="culture-stats">
+        <div class="cstat"><span class="mini-label">Recettes</span><p class="cstat-val income">${formatFCFA(s.recettes)}</p></div>
+        <div class="cstat"><span class="mini-label">Charges</span><p class="cstat-val expense">${formatFCFA(s.charges)}</p></div>
+        <div class="cstat"><span class="mini-label">Marge</span><p class="cstat-val ${s.marge>=0?'leaf':'expense'}">${formatFCFA(s.marge)}</p></div>
+        <div class="cstat"><span class="mini-label">Récolté</span><p class="cstat-val leaf">${recTexte}</p></div>
+        <div class="cstat"><span class="mini-label">Stock disponible</span><p class="cstat-val amber">${dispoTexte}</p></div>
+        <div class="cstat"><span class="mini-label">Quantités vendues</span><p class="cstat-val">${qteTexte}</p></div>
+        <div class="cstat"><span class="mini-label">Prix moyen / kg</span><p class="cstat-val amber">${s.prixMoyenKg ? Math.round(s.prixMoyenKg).toLocaleString('fr-FR') + ' FCFA' : '—'}</p></div>
+        <div class="cstat"><span class="mini-label">Meilleur prix / kg</span><p class="cstat-val amber">${s.meilleurPrix ? Math.round(s.meilleurPrix).toLocaleString('fr-FR') + ' FCFA' + (s.meilleurAcheteur ? ' (' + s.meilleurAcheteur + ')' : '') : '—'}</p></div>
+      </div>
+    </div>
+  `;
+  }).join('');
+
+  container.querySelectorAll('.culture-card').forEach(card=>{
+    card.querySelector('.cult-remove').addEventListener('click', async ()=>{
+      const nom = card.getAttribute('data-nom');
+      const utilisee = data.ventes.some(v=>v.culture===nom) || data.charges.some(c=>c.culture===nom);
+      if(utilisee && !confirm(`"${nom}" a déjà des ventes ou charges enregistrées. Elles seront conservées dans l'historique. Retirer quand même cette culture de la liste ?`)) return;
+      data.cultures = data.cultures.filter(c=>c!==nom);
+      await saveData();
+      renderCultures(); renderDashboard();
+    });
+  });
+}
+async function addCulture(){
+  const input = document.getElementById('newCultureName');
+  const nom = (input.value||'').trim();
+  if(!nom) return;
+  if(!data.cultures.includes(nom)) data.cultures.push(nom);
+  input.value = '';
+  await saveData();
+  renderCultures();
+}
+
+// --- Navigation ---
+// --- Sauvegarde locale manuelle (export/import JSON) ---
+function exportData(){
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const d = new Date();
+  const stamp = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `agri-sauvegarde-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function triggerImport(){
+  document.getElementById('fileImport').click();
+}
+async function handleImportFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  try{
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    if(!confirm('Importer ce fichier va REMPLACER toutes tes données actuelles par celles de la sauvegarde. Continuer ?')){
+      e.target.value = '';
+      return;
+    }
+    data = parsed;
+    migrateData();
+    await saveData();
+    renderDashboard();
+    renderRecoltes();
+    renderVentes();
+    renderCharges();
+    updateMonthTotalLabel();
+    const activeTab = document.querySelector('.tab.active');
+    if(activeTab){
+      const v = activeTab.getAttribute('data-view');
+      if(v === 'caisse'){ renderChart(); renderReconciliation(); }
+      if(v === 'historique'){ renderHistorique(); }
+      if(v === 'cultures'){ renderCultures(); }
+    }
+    showSaveStatus('Import réussi ✓', true);
+  } catch(err){
+    alert("Ce fichier n'est pas une sauvegarde JSON valide.");
+  }
+  e.target.value = '';
+}
+
+function switchView(viewName){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.getAttribute('data-view')===viewName));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+viewName).classList.add('active');
+  if(viewName === 'recoltes'){ renderRecoltes(); }
+  if(viewName === 'charges'){ renderCharges(); updateMonthTotalLabel(); }
+  if(viewName === 'caisse'){ renderChart(); renderReconciliation(); }
+  if(viewName === 'historique'){ renderHistorique(); }
+  if(viewName === 'cultures'){ renderCultures(); }
+}
+
+async function init(){
+  await loadData();
+
+  document.querySelectorAll('.mois-picker').forEach(p=>{
+    p.value = moisCourant;
+    p.addEventListener('change', ()=>{
+      moisCourant = p.value || todayMonthKey();
+      document.querySelectorAll('.mois-picker').forEach(x=>{ x.value = moisCourant; });
+      renderRecoltes();
+      renderVentes();
+      renderCharges();
+      updateMonthTotalLabel();
+      renderDashboard();
+    });
+  });
+
+  renderDashboard();
+  renderRecoltes();
+  renderVentes();
+  renderCharges();
+  updateMonthTotalLabel();
+
+  document.getElementById('btnAddRecolte').addEventListener('click', addRecolte);
+  document.getElementById('btnAddVente').addEventListener('click', addVente);
+  document.getElementById('btnAddCharge').addEventListener('click', addCharge);
+  document.getElementById('btnAddCulture').addEventListener('click', addCulture);
+  document.getElementById('newCultureName').addEventListener('keydown', (e)=>{ if(e.key==='Enter') addCulture(); });
+  document.getElementById('btnExport').addEventListener('click', exportData);
+  document.getElementById('btnImport').addEventListener('click', triggerImport);
+  document.getElementById('fileImport').addEventListener('change', handleImportFile);
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.addEventListener('click', ()=>switchView(t.getAttribute('data-view')));
+  });
+
+  async function refreshFromServer(){
+    const active = document.activeElement;
+    const enTrainDeSaisir = active && (active.tagName === 'INPUT' || active.tagName === 'SELECT');
+    if(enTrainDeSaisir) return;
+
+    await loadData();
+    renderDashboard();
+    renderRecoltes();
+    renderVentes();
+    renderCharges();
+    updateMonthTotalLabel();
+    const activeView = document.querySelector('.tab.active');
+    if(activeView){
+      const v = activeView.getAttribute('data-view');
+      if(v === 'caisse'){ renderChart(); renderReconciliation(); }
+      if(v === 'historique'){ renderHistorique(); }
+      if(v === 'cultures'){ renderCultures(); }
+    }
+  }
+
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible') refreshFromServer();
+  });
+
+  setInterval(refreshFromServer, 15000);
+}
+
+init();
+</script>
+</body>
+</html>
