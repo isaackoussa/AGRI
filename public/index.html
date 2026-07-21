@@ -503,7 +503,15 @@
 
 <script>
 const CULTURES_INITIALES = [];
-const UNITES = ["kg", "sac", "tonne", "botte", "filet", "unité"];
+const UNITES = ["filet", "sceau", "premice"];
+function estUnitePersonnalisee(u){
+  return !!u && !UNITES.includes(u);
+}
+function uniteOptionsHtml(selected){
+  const custom = estUnitePersonnalisee(selected);
+  return UNITES.map(u=>`<option value="${u}" ${u===selected?'selected':''}>${u}</option>`).join('')
+    + `<option value="Autre" ${custom?'selected':''}>Autre (préciser)</option>`;
+}
 const CATEGORIES_CHARGES = ["Semences / plants","Engrais","Phytosanitaires","Main d'œuvre","Irrigation / eau","Carburant / machines","Transport","Location matériel","Récolte","Autre"];
 const CULTURE_GENERALE = "Général (toutes cultures)";
 
@@ -544,11 +552,11 @@ function todayDateKey(){
 function monthOf(dateStr){ return (dateStr||'').slice(0,7); }
 function montantVente(v){ return (Number(v.quantite)||0) * (Number(v.prix)||0); }
 function totalRecolteCultureUnite(culture, unite){
-  return data.recoltes.filter(r=>r.culture===culture && (r.unite||'kg')===unite)
+  return data.recoltes.filter(r=>r.culture===culture && (r.unite||'filet')===unite)
     .reduce((a,r)=>a+(Number(r.quantite)||0), 0);
 }
 function totalVenduCultureUnite(culture, unite, excludeId){
-  return data.ventes.filter(v=>v.culture===culture && (v.unite||'kg')===unite && v.id!==excludeId)
+  return data.ventes.filter(v=>v.culture===culture && (v.unite||'filet')===unite && v.id!==excludeId)
     .reduce((a,v)=>a+(Number(v.quantite)||0), 0);
 }
 function quantiteDisponible(culture, unite, excludeId){
@@ -557,7 +565,7 @@ function quantiteDisponible(culture, unite, excludeId){
   return Math.max(0, rec - vendu);
 }
 function clampVenteQuantite(v){
-  const dispo = quantiteDisponible(v.culture, v.unite||'kg', v.id);
+  const dispo = quantiteDisponible(v.culture, v.unite||'filet', v.id);
   if(Number(v.quantite||0) > dispo){ v.quantite = dispo; return true; }
   return false;
 }
@@ -683,23 +691,27 @@ function renderRecoltes(){
   }
   const totauxUnite = {};
   items.forEach(({r})=>{
-    const u = r.unite || 'kg';
+    const u = r.unite || 'filet';
     totauxUnite[u] = (totauxUnite[u]||0) + (Number(r.quantite)||0);
   });
   const totalTexte = Object.entries(totauxUnite).map(([u,q])=>`${q.toLocaleString('fr-FR')} ${u}`).join(' · ');
-  list.innerHTML = items.map(({r, idx})=>`
+  list.innerHTML = items.map(({r, idx})=>{
+    const perso = estUnitePersonnalisee(r.unite||'filet');
+    return `
     <div class="vente-card recolte-card" data-idx="${idx}">
       <div class="vente-line1">
         <div><span class="mini-label">Date</span><input type="date" class="r-date" value="${r.date || ''}"></div>
         <div><span class="mini-label">Aliment / culture</span><select class="r-culture">${culturesOptions(r.culture, false)}</select></div>
         <button class="row-remove" title="Supprimer">✕</button>
       </div>
-      <div class="vente-line2" style="grid-template-columns:1fr 90px;">
+      <div class="vente-line2" style="grid-template-columns:1fr 110px;">
         <div><span class="mini-label">Quantité récoltée</span><input type="number" class="r-qte" placeholder="0" value="${r.quantite || ''}"></div>
-        <div><span class="mini-label">Unité</span><select class="r-unite">${UNITES.map(u=>`<option value="${u}" ${u===(r.unite||'kg')?'selected':''}>${u}</option>`).join('')}</select></div>
+        <div><span class="mini-label">Unité</span><select class="r-unite">${uniteOptionsHtml(r.unite||'filet')}</select></div>
       </div>
+      ${perso ? `<input type="text" class="r-unite-custom" placeholder="Précise l'unité (ex : cuvette, tas…)" style="margin-top:8px;" value="${(r.unite && r.unite!=='Autre') ? r.unite : ''}">` : ''}
     </div>
-  `).join('') + `
+  `;
+  }).join('') + `
     <div class="reconcile-row" style="padding:4px 6px;">
       <label>Total récolté ce mois (${items.length} récolte${items.length>1?'s':''})</label>
       <span class="ecart ok">${totalTexte || '—'}</span>
@@ -717,6 +729,10 @@ function renderRecoltes(){
     card.querySelector('.r-culture').addEventListener('change', async (e)=>{ r.culture = e.target.value; await saveData(); });
     card.querySelector('.r-qte').addEventListener('input', (e)=>{ r.quantite = Number(e.target.value)||0; scheduleSave(); });
     card.querySelector('.r-unite').addEventListener('change', async (e)=>{ r.unite = e.target.value; await saveData(); renderRecoltes(); });
+    const rUniteCustom = card.querySelector('.r-unite-custom');
+    if(rUniteCustom){
+      rUniteCustom.addEventListener('input', (e)=>{ r.unite = e.target.value; scheduleSave(); });
+    }
     card.querySelector('.row-remove').addEventListener('click', async ()=>{
       data.recoltes.splice(idx, 1);
       await saveData();
@@ -728,7 +744,7 @@ async function addRecolte(){
   if(data.cultures.length === 0){ switchView('cultures'); document.getElementById('newCultureName').focus(); return; }
   const mk = moisCourant;
   const date = (mk === todayMonthKey()) ? todayDateKey() : mk + '-01';
-  data.recoltes.push({ id: genId(), date, culture: data.cultures[0] || '', quantite: 0, unite: 'kg' });
+  data.recoltes.push({ id: genId(), date, culture: data.cultures[0] || '', quantite: 0, unite: 'filet' });
   await saveData();
   renderRecoltes();
 }
@@ -761,7 +777,8 @@ function renderVentes(){
   if(aClampe) saveData();
 
   list.innerHTML = items.map(({v, idx})=>{
-    const dispo = quantiteDisponible(v.culture, v.unite||'kg', v.id);
+    const dispo = quantiteDisponible(v.culture, v.unite||'filet', v.id);
+    const perso = estUnitePersonnalisee(v.unite||'filet');
     return `
     <div class="vente-card" data-idx="${idx}">
       <div class="vente-line1">
@@ -770,10 +787,11 @@ function renderVentes(){
         <button class="row-remove" title="Supprimer">✕</button>
       </div>
       <div class="vente-line2">
-        <div><span class="mini-label">Quantité <span class="dispo-hint">(dispo : ${dispo.toLocaleString('fr-FR')} ${v.unite||'kg'})</span></span><input type="number" class="v-qte" placeholder="0" max="${dispo}" value="${v.quantite || ''}"></div>
-        <div><span class="mini-label">Unité</span><select class="v-unite">${UNITES.map(u=>`<option value="${u}" ${u===(v.unite||'kg')?'selected':''}>${u}</option>`).join('')}</select></div>
+        <div><span class="mini-label">Quantité <span class="dispo-hint">(dispo : ${dispo.toLocaleString('fr-FR')} ${v.unite||'filet'})</span></span><input type="number" class="v-qte" placeholder="0" max="${dispo}" value="${v.quantite || ''}"></div>
+        <div><span class="mini-label">Unité</span><select class="v-unite">${uniteOptionsHtml(v.unite||'filet')}</select></div>
         <div><span class="mini-label">Prix unitaire (FCFA)</span><input type="number" class="v-prix" placeholder="0" value="${v.prix || ''}"></div>
       </div>
+      ${perso ? `<div style="margin-top:8px;"><span class="mini-label">Précise l'unité</span><input type="text" class="v-unite-custom" placeholder="ex : cuvette, tas…" value="${(v.unite && v.unite!=='Autre') ? v.unite : ''}"></div>` : ''}
       <div class="vente-line3">
         <div><span class="mini-label">Acheteur (facultatif)</span><input type="text" class="v-acheteur" placeholder="Nom de l'acheteur…" value="${v.acheteur || ''}"></div>
         <div style="text-align:right;"><span class="mini-label">Montant</span><span class="vente-montant v-montant">${formatFCFA(montantVente(v))}</span></div>
@@ -800,16 +818,16 @@ function renderVentes(){
       v.culture = e.target.value;
       const clamped = clampVenteQuantite(v);
       await saveData();
-      if(clamped) showWarning(`Quantité ajustée à ${v.quantite} ${v.unite||'kg'} : c'est tout ce qu'il reste de récolté pour "${v.culture}".`);
+      if(clamped) showWarning(`Quantité ajustée à ${v.quantite} ${v.unite||'filet'} : c'est tout ce qu'il reste de récolté pour "${v.culture}".`);
       renderVentes(); renderDashboard(); updateMonthTotalLabel();
     });
     card.querySelector('.v-qte').addEventListener('input', (e)=>{
-      const dispo = quantiteDisponible(v.culture, v.unite||'kg', v.id);
+      const dispo = quantiteDisponible(v.culture, v.unite||'filet', v.id);
       let val = Number(e.target.value)||0;
       if(val > dispo){
         val = dispo;
         e.target.value = dispo || '';
-        showWarning(`Stock insuffisant : il ne reste que ${dispo.toLocaleString('fr-FR')} ${v.unite||'kg'} de récolté pour "${v.culture}".`);
+        showWarning(`Stock insuffisant : il ne reste que ${dispo.toLocaleString('fr-FR')} ${v.unite||'filet'} de récolté pour "${v.culture}".`);
       }
       v.quantite = val;
       refresh();
@@ -822,6 +840,22 @@ function renderVentes(){
       if(clamped) showWarning(`Quantité ajustée à ${v.quantite} ${v.unite} : c'est tout ce qu'il reste de récolté en ${v.unite} pour "${v.culture}".`);
       renderVentes(); renderDashboard(); updateMonthTotalLabel();
     });
+    const vUniteCustom = card.querySelector('.v-unite-custom');
+    if(vUniteCustom){
+      vUniteCustom.addEventListener('input', (e)=>{
+        v.unite = e.target.value;
+        const clamped = clampVenteQuantite(v);
+        scheduleSave();
+        const dispo = quantiteDisponible(v.culture, v.unite, v.id);
+        const dispoHint = card.querySelector('.dispo-hint');
+        if(dispoHint) dispoHint.textContent = `(dispo : ${dispo.toLocaleString('fr-FR')} ${v.unite || '?'})`;
+        card.querySelector('.v-qte').max = dispo;
+        if(clamped){
+          card.querySelector('.v-qte').value = v.quantite || '';
+          card.querySelector('.v-montant').textContent = formatFCFA(montantVente(v));
+        }
+      });
+    }
     card.querySelector('.v-acheteur').addEventListener('input', (e)=>{ v.acheteur = e.target.value; scheduleSave(); });
     card.querySelector('.row-remove').addEventListener('click', async ()=>{
       data.ventes.splice(idx, 1);
@@ -834,7 +868,7 @@ async function addVente(){
   if(data.cultures.length === 0){ switchView('cultures'); document.getElementById('newCultureName').focus(); return; }
   const mk = moisCourant;
   const date = (mk === todayMonthKey()) ? todayDateKey() : mk + '-01';
-  data.ventes.push({ id: genId(), date, culture: data.cultures[0] || '', quantite: 0, unite: 'kg', prix: 0, acheteur: '' });
+  data.ventes.push({ id: genId(), date, culture: data.cultures[0] || '', quantite: 0, unite: 'filet', prix: 0, acheteur: '' });
   await saveData();
   renderVentes();
 }
@@ -846,10 +880,10 @@ function chargesDuMois(mk){
     .filter(({c})=>monthOf(c.date)===mk);
 }
 function libelleRecolte(r){
-  return `${r.date || '?'} — ${r.culture || '?'} — ${Number(r.quantite)||0} ${r.unite||'kg'}`;
+  return `${r.date || '?'} — ${r.culture || '?'} — ${Number(r.quantite)||0} ${r.unite||'filet'}`;
 }
 function libelleVente(v){
-  return `${v.date || '?'} — ${v.culture || '?'} — ${Number(v.quantite)||0} ${v.unite||'kg'} (${formatFCFA(montantVente(v))})`;
+  return `${v.date || '?'} — ${v.culture || '?'} — ${Number(v.quantite)||0} ${v.unite||'filet'} (${formatFCFA(montantVente(v))})`;
 }
 function renderCharges(){
   const mk = moisCourant;
@@ -989,10 +1023,10 @@ function renderChart(){
 function uniteDominanteRecoltes(){
   const compte = {};
   data.recoltes.forEach(r=>{
-    const u = r.unite || 'kg';
+    const u = r.unite || 'filet';
     compte[u] = (compte[u]||0) + 1;
   });
-  let best = 'kg', bestN = -1;
+  let best = 'filet', bestN = -1;
   Object.entries(compte).forEach(([u,n])=>{ if(n>bestN){ best=u; bestN=n; } });
   return best;
 }
@@ -1008,7 +1042,7 @@ function renderChartRecoltes(months){
   label.textContent = `Tendance des récoltes (12 derniers mois) — en ${unite}`;
   const totals = months.map(mk=>
     data.recoltes
-      .filter(r=>monthOf(r.date)===mk && (r.unite||'kg')===unite)
+      .filter(r=>monthOf(r.date)===mk && (r.unite||'filet')===unite)
       .reduce((a,r)=>a+(Number(r.quantite)||0), 0)
   );
   const max = Math.max(...totals, 1);
@@ -1042,7 +1076,7 @@ function renderHistorique(){
   data.ventes.forEach(v=>{
     const m = montantVente(v);
     if(m > 0){
-      const qte = `${Number(v.quantite)||0} ${v.unite||'kg'}`;
+      const qte = `${Number(v.quantite)||0} ${v.unite||'filet'}`;
       rows.push({ date: v.date || '', type: `${v.culture} — ${qte}${v.acheteur ? ' → ' + v.acheteur : ''}`, montant: m });
     }
   });
@@ -1061,7 +1095,7 @@ function renderHistorique(){
   });
   data.recoltes.forEach(r=>{
     if(Number(r.quantite) > 0){
-      rows.push({ date: r.date || '', type: `🌾 Récolte — ${r.culture}`, montant: null, qte: `${Number(r.quantite).toLocaleString('fr-FR')} ${r.unite||'kg'}` });
+      rows.push({ date: r.date || '', type: `🌾 Récolte — ${r.culture}`, montant: null, qte: `${Number(r.quantite).toLocaleString('fr-FR')} ${r.unite||'filet'}` });
     }
   });
   rows.sort((a,b)=> a.date < b.date ? 1 : -1);
@@ -1092,14 +1126,14 @@ function statsCulture(nom){
   // Quantités par unité
   const qtes = {};
   ventes.forEach(v=>{
-    const u = v.unite || 'kg';
+    const u = v.unite || 'filet';
     qtes[u] = (qtes[u]||0) + (Number(v.quantite)||0);
   });
 
   // Quantités récoltées par unité
   const recQtes = {};
   data.recoltes.filter(r=>r.culture === nom).forEach(r=>{
-    const u = r.unite || 'kg';
+    const u = r.unite || 'filet';
     recQtes[u] = (recQtes[u]||0) + (Number(r.quantite)||0);
   });
 
@@ -1109,17 +1143,24 @@ function statsCulture(nom){
     dispoParUnite[u] = Math.max(0, (recQtes[u]||0) - (qtes[u]||0));
   });
 
-  // Prix moyen au kg et meilleur prix (ventes en kg uniquement)
-  const ventesKg = ventes.filter(v=>(v.unite||'kg')==='kg' && Number(v.quantite)>0 && Number(v.prix)>0);
-  const totalKg = ventesKg.reduce((a,v)=>a+Number(v.quantite), 0);
-  const caKg = ventesKg.reduce((a,v)=>a+montantVente(v), 0);
-  const prixMoyenKg = totalKg > 0 ? caKg/totalKg : 0;
+  // Prix moyen et meilleur prix, calculés sur l'unité de vente la plus utilisée pour cette culture
+  const compteUnite = {};
+  ventes.forEach(v=>{
+    const u = v.unite || 'filet';
+    compteUnite[u] = (compteUnite[u]||0) + 1;
+  });
+  let uniteDom = null, uniteDomN = -1;
+  Object.entries(compteUnite).forEach(([u,n])=>{ if(n>uniteDomN){ uniteDom=u; uniteDomN=n; } });
+  const ventesUniteDom = uniteDom ? ventes.filter(v=>(v.unite||'filet')===uniteDom && Number(v.quantite)>0 && Number(v.prix)>0) : [];
+  const totalUniteDom = ventesUniteDom.reduce((a,v)=>a+Number(v.quantite), 0);
+  const caUniteDom = ventesUniteDom.reduce((a,v)=>a+montantVente(v), 0);
+  const prixMoyenKg = totalUniteDom > 0 ? caUniteDom/totalUniteDom : 0;
   let meilleurPrix = 0, meilleurAcheteur = '';
-  ventesKg.forEach(v=>{
+  ventesUniteDom.forEach(v=>{
     if(Number(v.prix) > meilleurPrix){ meilleurPrix = Number(v.prix); meilleurAcheteur = v.acheteur || ''; }
   });
 
-  return { recettes, charges, marge, qtes, recQtes, dispoParUnite, prixMoyenKg, meilleurPrix, meilleurAcheteur, nbVentes: ventes.length };
+  return { recettes, charges, marge, qtes, recQtes, dispoParUnite, prixMoyenKg, meilleurPrix, meilleurAcheteur, uniteDom, nbVentes: ventes.length };
 }
 function renderCultures(){
   const container = document.getElementById('culturesSummary');
@@ -1145,8 +1186,8 @@ function renderCultures(){
         <div class="cstat"><span class="mini-label">Récolté</span><p class="cstat-val leaf">${recTexte}</p></div>
         <div class="cstat"><span class="mini-label">Stock disponible</span><p class="cstat-val amber">${dispoTexte}</p></div>
         <div class="cstat"><span class="mini-label">Quantités vendues</span><p class="cstat-val">${qteTexte}</p></div>
-        <div class="cstat"><span class="mini-label">Prix moyen / kg</span><p class="cstat-val amber">${s.prixMoyenKg ? Math.round(s.prixMoyenKg).toLocaleString('fr-FR') + ' FCFA' : '—'}</p></div>
-        <div class="cstat"><span class="mini-label">Meilleur prix / kg</span><p class="cstat-val amber">${s.meilleurPrix ? Math.round(s.meilleurPrix).toLocaleString('fr-FR') + ' FCFA' + (s.meilleurAcheteur ? ' (' + s.meilleurAcheteur + ')' : '') : '—'}</p></div>
+        <div class="cstat"><span class="mini-label">Prix moyen${s.uniteDom ? ' / ' + s.uniteDom : ''}</span><p class="cstat-val amber">${s.prixMoyenKg ? Math.round(s.prixMoyenKg).toLocaleString('fr-FR') + ' FCFA' : '—'}</p></div>
+        <div class="cstat"><span class="mini-label">Meilleur prix${s.uniteDom ? ' / ' + s.uniteDom : ''}</span><p class="cstat-val amber">${s.meilleurPrix ? Math.round(s.meilleurPrix).toLocaleString('fr-FR') + ' FCFA' + (s.meilleurAcheteur ? ' (' + s.meilleurAcheteur + ')' : '') : '—'}</p></div>
       </div>
     </div>
   `;
